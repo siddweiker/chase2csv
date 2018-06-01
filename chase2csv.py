@@ -79,7 +79,6 @@ def translate_to_csv_file(lines, file_name):
             opening, closing = row[1].split(' - ')
             year_guesser.append(dt.strptime(opening, '%m/%d/%y'))
             year_guesser.append(dt.strptime(closing, '%m/%d/%y'))
-            break
 
     # Sort it, the order is the order that each year will be guessed
     year_guesser.sort()
