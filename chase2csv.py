@@ -11,6 +11,7 @@ from pdfminer.pdfpage import PDFPage
 
 
 CSV_DATE_FORMAT = '%m/%d/%Y'
+CSV_HEADERS = ['Type', 'Trans Date', 'Post Date', 'Description', 'Amount']
 START_DATE = None
 END_DATE = None
 
@@ -71,7 +72,7 @@ def pdf_to_lines(file_name):
     return data
 
 
-def translate_to_csv_file(lines, file_name):
+def translate_to_csv(lines):
     # Attempt to build a range of dates to append year
     year_guesser = [dt.today()]
     for row in lines:
@@ -86,7 +87,6 @@ def translate_to_csv_file(lines, file_name):
     # Regex pattern for matching month/day format of each line
     date_pattern = r'\d\d\/\d\d'
     csv_data = []
-    headers = ['Type', 'Trans Date', 'Post Date', 'Description', 'Amount']
 
     for row in lines:
         if len(row) != 3:
@@ -112,18 +112,9 @@ def translate_to_csv_file(lines, file_name):
             else:
                 amount = '-' + amount
 
-            csv_data.append(dict(zip(headers, [trans_type, date, '', desc, amount])))
+            csv_data.append(dict(zip(CSV_HEADERS, [trans_type, date, '', desc, amount])))
 
-    csv_data = sort_and_filter(csv_data)
-    with open(file_name, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
-        writer.writeheader()
-        # Format out datetime
-        for row in csv_data:
-            row['Trans Date'] = dt.strftime(row['Trans Date'], CSV_DATE_FORMAT)
-            writer.writerow(row)
-
-    return len(csv_data)
+    return sort_and_filter(csv_data)
 
 
 if __name__ == '__main__':
@@ -170,9 +161,22 @@ if __name__ == '__main__':
             input_files.append(os.path.join(args.dir, file))
 
     all_pdf_data = []
+    num_rows = 0
     for file in input_files:
-        all_pdf_data.extend(pdf_to_lines(file))
-        print('Parsed file: {}'.format(file))
+        data = translate_to_csv(pdf_to_lines(file))
+        all_pdf_data.extend(data)
+        print('Parsed {} rows from file: {}'.format(len(data), file))
 
-    num_rows = translate_to_csv_file(all_pdf_data, output_file)
-    print('CSV file generated with {} rows: {}'.format(num_rows, output_file))
+    all_pdf_data = sort_and_filter(all_pdf_data)
+
+    with open(output_file, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_HEADERS)
+        writer.writeheader()
+        # Format out datetime
+        for row in all_pdf_data:
+            row['Trans Date'] = dt.strftime(row['Trans Date'], CSV_DATE_FORMAT)
+            writer.writerow(row)
+
+    print('CSV file generated with {} rows: {}'.format(
+        len(all_pdf_data), output_file)
+    )
