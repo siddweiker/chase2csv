@@ -1,3 +1,5 @@
+# NOTE: This repo is archived since you can simply download your statements as CSV from the Chase website
+
 # Chase Bank Statement Converter
 A small utility for converting Chase (bank) statements to CSV
 
